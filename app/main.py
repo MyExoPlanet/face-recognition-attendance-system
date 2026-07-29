@@ -6,10 +6,7 @@ def main():
 
     try:
         camera.open()
-
-        frame = camera.read()
-
-        print(frame.shape)
+        camera.show()
 
     finally:
         camera.release()
