@@ -30,23 +30,16 @@ class Camera:
         return frame
 
     def show(self, window_name="Camera"):
-        """Display the live camera feed."""
+        """Display one frame and return the frame and key pressed."""
 
-        if self.capture is None:
-            raise RuntimeError("Camera has not been opened.")
+        frame = self.read()
+        # Remove the mirror effect
+        frame = cv2.flip(frame, 1)
+        cv2.imshow(window_name, frame)
 
-        while True:
-            frame = self.read()
+        key = cv2.waitKey(1) & 0xFF
 
-            # Flip horizontally to remove mirror effect
-            frame = cv2.flip(frame, 1)
-
-            cv2.imshow(window_name, frame)
-
-            key = cv2.waitKey(1) & 0xFF
-
-            if key == ord("q"):
-                break
+        return frame, key
 
     def release(self):
         """Release the webcam."""

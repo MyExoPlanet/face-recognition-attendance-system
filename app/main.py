@@ -1,15 +1,9 @@
-from camera.camera import Camera
+from registration.registration import Registration
 
 
 def main():
-    camera = Camera()
-
-    try:
-        camera.open()
-        camera.show()
-
-    finally:
-        camera.release()
+    registration = Registration()
+    registration.register_student()
 
 
 if __name__ == "__main__":
