@@ -2,6 +2,7 @@ import os
 import cv2
 
 from camera.camera import Camera
+from database.database import Database
 
 
 class Registration:
@@ -9,6 +10,7 @@ class Registration:
 
     def __init__(self):
         self.camera = Camera()
+        self.database = Database()
 
     def create_student_folder(self, student_id, student_name):
         """Create a folder for storing a student's images."""
@@ -31,9 +33,23 @@ class Registration:
         student_id = input("Enter Student ID: ")
         student_name = input("Enter Student Name: ")
 
+        # Check if student already exists
+        if self.database.student_exists(student_id):
+            print("\nStudent ID already exists!")
+            self.database.close()
+            return
+
+        # Create folder
         folder_path = self.create_student_folder(
             student_id,
             student_name
+        )
+
+        # Save student in database
+        self.database.add_student(
+            student_id,
+            student_name,
+            folder_path
         )
 
         print(f"\nStudent folder created at:\n{folder_path}")
@@ -52,8 +68,7 @@ class Registration:
 
                 frame, key = self.camera.show()
 
-                # SPACE BAR
-                if key == 32:
+                if key == 32:  # SPACE
 
                     image_count += 1
 
@@ -66,8 +81,7 @@ class Registration:
 
                     print(f"Captured {image_count}/{max_images}")
 
-                # ESC KEY
-                elif key == 27:
+                elif key == 27:  # ESC
 
                     print("\nRegistration cancelled.")
                     break
@@ -77,3 +91,4 @@ class Registration:
 
         finally:
             self.camera.release()
+            self.database.close()
