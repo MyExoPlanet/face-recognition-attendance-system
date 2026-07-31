@@ -81,14 +81,21 @@ class Registration:
 
                     print(f"Captured {image_count}/{max_images}")
 
+                    # Exit immediately after the last image
+                    if image_count >= max_images:
+                        print("\nRegistration completed successfully!")
+                        break
+
                 elif key == 27:  # ESC
 
                     print("\nRegistration cancelled.")
                     break
 
-            if image_count == max_images:
-                print("\nRegistration completed successfully!")
-
         finally:
+            print("1. Releasing camera...")
             self.camera.release()
+            print("2. Camera released.")
+            print("3. Closing database...")
             self.database.close()
+            print("4. Database closed.")
+            print("5. Finished cleanup.")

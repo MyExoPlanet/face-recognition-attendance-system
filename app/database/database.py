@@ -16,8 +16,6 @@ class Database:
         self.create_student_table()
 
     def create_student_table(self):
-        """Create the students table if it doesn't exist."""
-
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS students (
                 student_id TEXT PRIMARY KEY,
@@ -25,37 +23,44 @@ class Database:
                 image_folder TEXT NOT NULL
             )
         """)
-
         self.connection.commit()
 
     def student_exists(self, student_id):
-        """Return True if the student ID already exists."""
-
         self.cursor.execute(
             "SELECT 1 FROM students WHERE student_id = ?",
             (student_id,)
         )
-
         return self.cursor.fetchone() is not None
 
     def add_student(self, student_id, student_name, image_folder):
-        """Insert a new student into the database."""
-
         self.cursor.execute("""
             INSERT INTO students
             (student_id, student_name, image_folder)
             VALUES (?, ?, ?)
         """, (student_id, student_name, image_folder))
-
         self.connection.commit()
 
-    def get_all_students(self):
-        """Return all students."""
+    def get_student(self, student_id):
+        self.cursor.execute(
+            "SELECT * FROM students WHERE student_id = ?",
+            (student_id,)
+        )
+        return self.cursor.fetchone()
 
-        self.cursor.execute("SELECT * FROM students")
+    def get_all_students(self):
+        self.cursor.execute("""
+            SELECT student_id, student_name, image_folder
+            FROM students
+            ORDER BY student_id
+        """)
         return self.cursor.fetchall()
 
-    def close(self):
-        """Close the database connection."""
+    def delete_student(self, student_id):
+        self.cursor.execute(
+            "DELETE FROM students WHERE student_id = ?",
+            (student_id,)
+        )
+        self.connection.commit()
 
+    def close(self):
         self.connection.close()

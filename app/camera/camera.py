@@ -33,8 +33,11 @@ class Camera:
         """Display one frame and return the frame and key pressed."""
 
         frame = self.read()
-        # Remove the mirror effect
+
+        # Flip horizontally so the preview behaves like a mirror.
+        # Remove this line if you prefer the non-mirrored view.
         frame = cv2.flip(frame, 1)
+
         cv2.imshow(window_name, frame)
 
         key = cv2.waitKey(1) & 0xFF
@@ -49,3 +52,6 @@ class Camera:
             self.capture = None
 
         cv2.destroyAllWindows()
+
+        # Allow OpenCV to process the window close event
+        cv2.waitKey(1)
