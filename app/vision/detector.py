@@ -2,10 +2,9 @@ from insightface.app import FaceAnalysis
 
 
 class FaceDetector:
-    """Detect faces using InsightFace."""
+    """Handles face detection using InsightFace."""
 
     def __init__(self):
-
         self.app = FaceAnalysis(
             providers=["CPUExecutionProvider"]
         )
@@ -16,11 +15,6 @@ class FaceDetector:
         )
 
     def detect(self, frame):
-        """
-        Detect faces.
-
-        Returns:
-            List of detected faces.
-        """
+        """Return detected faces."""
 
         return self.app.get(frame)

@@ -14,8 +14,11 @@ class Database:
         self.cursor = self.connection.cursor()
 
         self.create_student_table()
+        self.create_embedding_table()
 
     def create_student_table(self):
+        """Create the students table."""
+
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS students (
                 student_id TEXT PRIMARY KEY,
@@ -23,44 +26,112 @@ class Database:
                 image_folder TEXT NOT NULL
             )
         """)
+
+        self.connection.commit()
+
+    def create_embedding_table(self):
+        """Create face embeddings table."""
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS face_embeddings (
+
+            embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            student_id TEXT NOT NULL,
+
+            embedding BLOB NOT NULL,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY(student_id)
+            REFERENCES students(student_id)
+
+        )
+    """)
+        self.connection.commit()
+
         self.connection.commit()
 
     def student_exists(self, student_id):
+        """Check whether a student already exists."""
+
         self.cursor.execute(
             "SELECT 1 FROM students WHERE student_id = ?",
             (student_id,)
         )
+
         return self.cursor.fetchone() is not None
 
     def add_student(self, student_id, student_name, image_folder):
+        """Add a student."""
+
         self.cursor.execute("""
             INSERT INTO students
             (student_id, student_name, image_folder)
             VALUES (?, ?, ?)
-        """, (student_id, student_name, image_folder))
+        """, (
+            student_id,
+            student_name,
+            image_folder
+        ))
+
+        self.connection.commit()
+
+    def save_embedding(self, student_id, embedding):
+        """Save a student's face embedding."""
+
+        self.cursor.execute("""
+            INSERT OR REPLACE INTO face_embeddings
+            (student_id, embedding)
+            VALUES (?, ?)
+        """, (
+            student_id,
+            embedding.tobytes()
+        ))
+
         self.connection.commit()
 
     def get_student(self, student_id):
+        """Return one student."""
+
         self.cursor.execute(
-            "SELECT * FROM students WHERE student_id = ?",
+            """
+            SELECT *
+            FROM students
+            WHERE student_id = ?
+            """,
             (student_id,)
         )
+
         return self.cursor.fetchone()
 
     def get_all_students(self):
+        """Return all students."""
+
         self.cursor.execute("""
-            SELECT student_id, student_name, image_folder
+            SELECT
+                student_id,
+                student_name,
+                image_folder
             FROM students
             ORDER BY student_id
         """)
+
         return self.cursor.fetchall()
 
     def delete_student(self, student_id):
+        """Delete a student."""
+
         self.cursor.execute(
-            "DELETE FROM students WHERE student_id = ?",
+            """
+            DELETE FROM students
+            WHERE student_id = ?
+            """,
             (student_id,)
         )
+
         self.connection.commit()
 
     def close(self):
+        """Close the database connection."""
+
         self.connection.close()

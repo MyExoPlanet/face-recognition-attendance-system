@@ -3,6 +3,7 @@ import cv2
 
 from camera.camera import Camera
 from database.database import Database
+from vision.detector import FaceDetector
 
 
 class Registration:
@@ -10,10 +11,11 @@ class Registration:
 
     def __init__(self):
         self.camera = Camera()
+        self.detector = FaceDetector()
         self.database = Database()
 
     def create_student_folder(self, student_id, student_name):
-        """Create a folder for storing a student's images."""
+        """Create a folder for storing student images."""
 
         folder_name = f"{student_id}_{student_name.replace(' ', '_')}"
 
@@ -28,74 +30,100 @@ class Registration:
         return folder_path
 
     def register_student(self):
-        """Register a new student and capture face images."""
+        """Register a new student."""
 
         student_id = input("Enter Student ID: ")
         student_name = input("Enter Student Name: ")
 
-        # Check if student already exists
         if self.database.student_exists(student_id):
             print("\nStudent ID already exists!")
             self.database.close()
             return
 
-        # Create folder
         folder_path = self.create_student_folder(
             student_id,
             student_name
         )
 
-        # Save student in database
         self.database.add_student(
             student_id,
             student_name,
             folder_path
         )
 
-        print(f"\nStudent folder created at:\n{folder_path}")
+        print("\nRegistration Mode")
+        print("Press SPACE to capture a face.")
+        print("Press Q to cancel.\n")
 
         image_count = 0
-        max_images = 30
+        max_images = 5
+
+        self.camera.open()
 
         try:
-            self.camera.open()
 
-            print("\nInstructions:")
-            print("Press SPACE to capture an image.")
-            print("Press ESC to cancel registration.\n")
+            while True:
 
-            while image_count < max_images:
+                frame = self.camera.read()
+                frame = cv2.flip(frame, 1)
 
-                frame, key = self.camera.show()
+                faces = self.detector.detect(frame)
 
-                if key == 32:  # SPACE
+                for face in faces:
+
+                    x1, y1, x2, y2 = face.bbox.astype(int)
+
+                    cv2.rectangle(
+                        frame,
+                        (x1, y1),
+                        (x2, y2),
+                        (0, 255, 0),
+                        2
+                    )
+
+                cv2.imshow("Student Registration", frame)
+
+                key = cv2.waitKey(1) & 0xFF
+
+                if key == ord(" "):
+
+                    if len(faces) == 0:
+                        print("No face detected.")
+                        continue
+
+                    face = faces[0]
+
+                    x1, y1, x2, y2 = face.bbox.astype(int)
+
+                    cropped_face = frame[y1:y2, x1:x2]
 
                     image_count += 1
 
                     image_path = os.path.join(
                         folder_path,
-                        f"{image_count}.jpg"
+                        f"face_{image_count:02d}.jpg"
                     )
 
-                    cv2.imwrite(image_path, frame)
+                    cv2.imwrite(
+                        image_path,
+                        cropped_face
+                    )
 
-                    print(f"Captured {image_count}/{max_images}")
+                    print(
+                        f"Captured {image_count}/{max_images}"
+                    )
 
-                    # Exit immediately after the last image
                     if image_count >= max_images:
-                        print("\nRegistration completed successfully!")
+
+                        print("\nRegistration completed!")
                         break
 
-                elif key == 27:  # ESC
+                elif key == ord("q"):
 
                     print("\nRegistration cancelled.")
                     break
 
         finally:
-            print("1. Releasing camera...")
+
             self.camera.release()
-            print("2. Camera released.")
-            print("3. Closing database...")
             self.database.close()
-            print("4. Database closed.")
-            print("5. Finished cleanup.")
