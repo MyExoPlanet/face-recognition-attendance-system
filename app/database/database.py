@@ -15,6 +15,7 @@ class Database:
 
         self.create_student_table()
         self.create_embedding_table()
+        self.create_attendance_table()
 
     def create_student_table(self):
         """Create the students table."""
@@ -49,7 +50,6 @@ class Database:
     """)
         self.connection.commit()
 
-        self.connection.commit()
 
     def student_exists(self, student_id):
         """Check whether a student already exists."""
@@ -135,3 +135,27 @@ class Database:
         """Close the database connection."""
 
         self.connection.close()
+
+    def create_attendance_table(self):
+        """Create attendance table."""
+
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS attendance (
+
+            attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            student_id TEXT NOT NULL,
+
+            date TEXT NOT NULL,
+
+            time TEXT NOT NULL,
+
+            status TEXT NOT NULL,
+
+            FOREIGN KEY(student_id)
+            REFERENCES students(student_id)
+
+        )
+    """)
+
+        self.connection.commit()
