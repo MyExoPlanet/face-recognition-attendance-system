@@ -11,6 +11,7 @@ class Database:
 
         self.db_path = os.path.join(db_folder, "attendance.db")
         self.connection = sqlite3.connect(self.db_path)
+        self.connection.execute("PRAGMA foreign_keys = ON")
         self.cursor = self.connection.cursor()
 
         self.create_student_table()
@@ -31,25 +32,50 @@ class Database:
         self.connection.commit()
 
     def create_embedding_table(self):
-        """Create face embeddings table."""
+        """Create the face embeddings table."""
+
         self.cursor.execute("""
-        CREATE TABLE IF NOT EXISTS face_embeddings (
+            CREATE TABLE IF NOT EXISTS face_embeddings (
 
-            embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            student_id TEXT NOT NULL,
+                student_id TEXT NOT NULL,
 
-            embedding BLOB NOT NULL,
+                embedding BLOB NOT NULL,
 
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-            FOREIGN KEY(student_id)
-            REFERENCES students(student_id)
+                FOREIGN KEY(student_id)
+                REFERENCES students(student_id)
 
-        )
-    """)
+            )
+        """)
+
         self.connection.commit()
 
+    def create_attendance_table(self):
+        """Create the attendance table."""
+
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS attendance (
+
+                attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                student_id TEXT NOT NULL,
+
+                date TEXT NOT NULL,
+
+                time TEXT NOT NULL,
+
+                status TEXT NOT NULL,
+
+                FOREIGN KEY(student_id)
+                REFERENCES students(student_id)
+
+            )
+        """)
+
+        self.connection.commit()
 
     def student_exists(self, student_id):
         """Check whether a student already exists."""
@@ -80,7 +106,7 @@ class Database:
         """Save a student's face embedding."""
 
         self.cursor.execute("""
-            INSERT OR REPLACE INTO face_embeddings
+            INSERT INTO face_embeddings
             (student_id, embedding)
             VALUES (?, ?)
         """, (
@@ -90,19 +116,42 @@ class Database:
 
         self.connection.commit()
 
+    def get_all_embeddings(self):
+        """Return all stored embeddings."""
+
+        self.cursor.execute("""
+            SELECT student_id, embedding
+            FROM face_embeddings
+        """)
+
+        return self.cursor.fetchall()
+
     def get_student(self, student_id):
         """Return one student."""
 
-        self.cursor.execute(
-            """
+        self.cursor.execute("""
             SELECT *
             FROM students
             WHERE student_id = ?
-            """,
-            (student_id,)
-        )
+        """, (student_id,))
 
         return self.cursor.fetchone()
+
+    def get_student_name(self, student_id):
+        """Return a student's name."""
+
+        self.cursor.execute("""
+            SELECT student_name
+            FROM students
+            WHERE student_id = ?
+        """, (student_id,))
+
+        result = self.cursor.fetchone()
+
+        if result:
+            return result[0]
+
+        return None
 
     def get_all_students(self):
         """Return all students."""
@@ -119,15 +168,40 @@ class Database:
         return self.cursor.fetchall()
 
     def delete_student(self, student_id):
-        """Delete a student."""
+        """Delete a student and related records."""
 
         self.cursor.execute(
-            """
-            DELETE FROM students
-            WHERE student_id = ?
-            """,
-            (student_id,)
-        )
+        "DELETE FROM face_embeddings WHERE student_id = ?",
+        (student_id,)
+          )
+        self.cursor.execute(
+        "DELETE FROM attendance WHERE student_id = ?",
+        (student_id,)
+          )
+
+        self.cursor.execute(
+        "DELETE FROM students WHERE student_id = ?",
+        (student_id,)
+          )
+        self.connection.commit()
+
+    def mark_attendance(self, student_id):
+        """Mark attendance for a student."""
+
+        from datetime import datetime
+
+        now = datetime.now()
+
+        self.cursor.execute("""
+            INSERT INTO attendance
+            (student_id, date, time, status)
+            VALUES (?, ?, ?, ?)
+        """, (
+            student_id,
+            now.strftime("%Y-%m-%d"),
+            now.strftime("%H:%M:%S"),
+            "Present"
+        ))
 
         self.connection.commit()
 
@@ -135,27 +209,3 @@ class Database:
         """Close the database connection."""
 
         self.connection.close()
-
-    def create_attendance_table(self):
-        """Create attendance table."""
-
-        self.cursor.execute("""
-        CREATE TABLE IF NOT EXISTS attendance (
-
-            attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-            student_id TEXT NOT NULL,
-
-            date TEXT NOT NULL,
-
-            time TEXT NOT NULL,
-
-            status TEXT NOT NULL,
-
-            FOREIGN KEY(student_id)
-            REFERENCES students(student_id)
-
-        )
-    """)
-
-        self.connection.commit()

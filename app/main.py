@@ -1,9 +1,10 @@
 from registration.registration import Registration
 from admin.admin import Admin
-from vision.capture import VisionDemo
+from recognition.recognition import Recognition
 
 
 def main():
+    """Main menu."""
 
     while True:
 
@@ -11,7 +12,7 @@ def main():
         print("1. Register Student")
         print("2. View Students")
         print("3. Delete Student")
-        print("4. Face Detection Demo")
+        print("4. Recognize Student")
         print("5. Exit")
 
         choice = input("\nEnter your choice: ")
@@ -35,8 +36,8 @@ def main():
 
         elif choice == "4":
 
-            demo = VisionDemo()
-            demo.start()
+            recognition = Recognition()
+            recognition.start()
 
         elif choice == "5":
 

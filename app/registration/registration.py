@@ -4,6 +4,7 @@ import cv2
 from camera.camera import Camera
 from database.database import Database
 from vision.detector import FaceDetector
+from vision.encoder import FaceEncoder
 
 
 class Registration:
@@ -13,6 +14,7 @@ class Registration:
         self.camera = Camera()
         self.detector = FaceDetector()
         self.database = Database()
+        self.encoder = FaceEncoder()
 
     def create_student_folder(self, student_id, student_name):
         """Create a folder for storing student images."""
@@ -97,6 +99,8 @@ class Registration:
 
                     cropped_face = frame[y1:y2, x1:x2]
 
+                    embedding = self.encoder.get_embedding(face)
+
                     image_count += 1
 
                     image_path = os.path.join(
@@ -108,6 +112,10 @@ class Registration:
                         image_path,
                         cropped_face
                     )
+                    self.database.save_embedding(
+                         student_id,
+                         embedding
+                         )
 
                     print(
                         f"Captured {image_count}/{max_images}"
